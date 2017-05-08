@@ -3,6 +3,7 @@
 PORT=22222
 CIDFILE="cid"
 
+DOCKER_IMAGE="$(USER)_deep_car"
 if [ -e $CIDFILE ]; then
     CID=$(cat $CIDFILE)
     CMD="docker start $CID"
@@ -17,7 +18,7 @@ else
         -p 8888:8888 \
         -p $PORT:22 \
         -v $HOME:$HOME  \
-        deep_car"
+        $DOCKER_IMAGE"
     echo "$CMD"
     $CMD
 fi

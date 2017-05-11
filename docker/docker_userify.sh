@@ -40,19 +40,13 @@ if [ "$PASSWORD" == "" ]; then
 fi
 
 
-OUT_DIR="$USER-deep_car"
+OUT_DIR="${USER}_deep_car"
 mkdir -p  "$OUT_DIR"
 
 cat <<EOF  > $OUT_DIR/Dockerfile
 FROM deep_car
 MAINTAINER github@leon-sixt.de
-# setup sudo
-# RUN groupadd --system sudo
-# RUN echo "%sudo ALL=(ALL) ALL" >> /etc/sudoers
-# Use the same gid and uid as your user on the host system. You can find them
-# out with the `id`  programm. This way the file ownership in mapped directories is
-# consistent with the host system.
-#
+
 RUN groupadd --gid $UID $USER
 RUN useradd --uid $UID  --gid $USER \
     --home-dir /home/$USER --shell /usr/bin/zsh  \
@@ -62,6 +56,9 @@ RUN useradd --uid $UID  --gid $USER \
 # default password $USER
 RUN echo $USER:$PASSWORD | chpasswd && \
     echo root:$PASSWORD | chpasswd
+
+RUN chsh -s /usr/bin/zsh
+
 USER $USER
 WORKDIR /home/$USER
 EOF

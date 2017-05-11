@@ -1,20 +1,35 @@
-# Docker for ros indigo
+# Nvidia Docker for ros indigo
 
-This folder includes a Dockerfile for ros indigo. As a special feature,
-you can use ssh to connect to the container and forward the X-Server.
+This folder includes a Dockerfile that includes ros indigo and cudnn.
+To build the base image, clone this repo: https://github.com/berleon/ros_cudnn_docker_images
+And build the images with
+
+```bash
+$ git clone https://github.com/berleon/ros_cudnn_docker_images.git
+$ cd ros_cudnn_docker_images/ros/indigo/
+$ make build_desktop
+```
 
 Make sure all commands are run within the docker directory!
-```
+```bash
 # to build the docker file. This will automatically append your public ssh key
 # to the authorized_keys file
 $ ./build.sh
 
-# run the docker image. This will also start the ssh deamon.
-$ ./run.sh
+# create your own user inside of docker
+$ ./docker_userify.sh
 
-# now you can connect to it via ssh
-$ ./connect.sh
+$ cd ${USER}_deep_car
 
-# if you shutdown, to restart the old container just type:
+# build your image.
+$ ./build.sh
+
+# run your docker image.
 $ ./run.sh
+```
+
+You can even forward an X session over ssh:
+
+```
+$ ssh -X -Y yourname@yourhost.com
 ```

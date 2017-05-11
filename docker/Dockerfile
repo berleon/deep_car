@@ -1,4 +1,4 @@
-FROM ros:indigo
+FROM ros_cudnn:indigo-desktop-full
 MAINTAINER Leon Sixt
 
 RUN rosdep update
@@ -6,16 +6,18 @@ RUN apt-get update --yes && apt-get upgrade --yes
 RUN apt-get install --yes ros-indigo-desktop-full \
     liburdfdom-tools \
     openssh-server \
+    ssl-cert \
     vim \
     tmux \
     zsh \
-    ros-indigo-ompl-visual-tools \
-    ros-indigo-moveit-ros-* \
-    ros-indigo-ros-control \
-    ros-indigo-ros-controllers \
-    ros-indigo-fake-localization
-
-RUN apt-get install --yes \
+    python-setuptools \
+    python-pip \
+    python-nose \
+    python-pytest \
+    python-sklearn \
+    python-skimage \
+    python-h5py \
+    python-matplotlib \
     python-scipy \
     python-matplotlib \
     python-pip \
@@ -23,19 +25,26 @@ RUN apt-get install --yes \
     ipython \
     ipython-notebook
 
+RUN pip install --upgrade pip
 
-RUN echo "source /opt/ros/indigo/setup.bash" >> ~/.bashrc \
-    && echo "AuthorizedKeysFile  %h/.ssh/authorized_keys\nX11UseLocalhost no" >> /etc/ssh/sshd_config
+RUN pip install \
+    tensorflow-gpu \
+    keras \
+    jupyter \
+    xgboost \
+    seaborn \
+    pytest-cov \
+    pytest-benchmark \
+    pytest-flake8 \
+    more_itertools \
+    scikit-image \
+    click \
+    pandas
 
-COPY authorized_keys /root/.ssh/authorized_keys
-RUN mkdir -p /var/run/sshd
-EXPOSE 22
-
+RUN ldconfig    # otherwise the cuda libaries are not found
 
 # Set the locale
 RUN locale-gen en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
-
-CMD ["/usr/sbin/sshd", "-D"]

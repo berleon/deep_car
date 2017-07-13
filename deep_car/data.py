@@ -98,7 +98,7 @@ def get_steering_delta(batch):
     return np.concatenate(steering, axis=-1)
 
 
-def batch_to_numpy(batch, y_delta_buckets):
+def batch_to_numpy(batch, y_delta_buckets=9):
     x = 2. * batch['image'] / 255. - 1
     y_abs = batch['steering_abs']
     y_delta = get_steering_delta(batch)

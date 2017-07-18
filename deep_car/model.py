@@ -108,16 +108,20 @@ def get_model(x, steering_hist, len_steering_delta, y_delta_buckets, n_mixtures=
 
         y_delta_logits = tf.layers.dense(l, len_steering_delta * y_delta_buckets)
         y_delta_logits = tf.reshape(y_delta_logits, (-1, len_steering_delta, y_delta_buckets))
-        y_delta_prob = tf.nn.softmax(y_delta_logits)
+        y_delta_prob = tf.nn.softmax(y_delta_logits, name='y_delta_prob')
 
         y_delta_loss = tf.nn.softmax_cross_entropy_with_logits(
-            labels=y_delta_true_hot, logits=y_delta_logits)
-        y_abs_loss = -log_p_x(tf.expand_dims(y_abs_true, axis=1), pi_logits, mu, s)
+            labels=y_delta_true_hot, logits=y_delta_logits, name='y_delta_loss')
 
-        y_abs_discr_prob = discretize_mixture(pi_logits, mu, s)
+        y_abs_loss = tf.identity(
+            -log_p_x(tf.expand_dims(y_abs_true, axis=1), pi_logits, mu, s),
+            name='y_abs_loss')
+
+        y_abs_discr_prob = tf.identity(
+            discretize_mixture(pi_logits, mu, s), name='y_abs_discr_prob')
 
         opt = tf.train.AdamOptimizer(learning_rate=0.0003)
-        opt_op = opt.minimize(y_delta_loss + y_abs_loss)
+        opt_op = opt.minimize(y_delta_loss + y_abs_loss, name='opt')
 
         return y_abs_true, y_delta_true, opt_op, \
             y_abs_discr_prob, y_abs_loss, y_delta_prob, y_delta_loss

@@ -60,7 +60,7 @@ def create_inputs(input_size, len_steering_hist):
 
 
 def get_model(x, steering_hist, len_steering_delta, y_delta_buckets, n_mixtures=6, reuse=False):
-    with tf.variable_scope("deep_car", reuse=False):
+    with tf.variable_scope("deep_car", reuse=reuse):
         y_abs_true = tf.placeholder(tf.float32, shape=[None, 1], name='y_abs_true')
         y_delta_true = tf.placeholder(tf.int32, shape=[None, len_steering_delta],
                                       name='y_delta_true')

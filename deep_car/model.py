@@ -66,62 +66,62 @@ def log_p_x(x, pi_logits, means, s, min=-np.pi/2, max=np.pi/2, num=180):
 class Model:
     def __init__(self, input_shape, n_mixtures=6, y_delta_buckets=2, reuse=False):
         self.n_mixtures = n_mixtures
-
-        # inputs
-        self.image = tf.placeholder(tf.float32, shape=input_shape, name='image')
-        self.steering_abs = tf.placeholder(tf.float32, shape=[None, 1], name='steering_abs')
-
-        self.y_delta_buckets = y_delta_buckets
-
-        # ground truth
-        self.y_distance_true = tf.placeholder(
-                tf.float32, shape=[None, 1], name='y_distance_true')
-        self.y_delta_true = tf.placeholder(tf.int32, shape=[None, 1], name='y_delta_true')
-        self.y_delta_true_hot = tf.one_hot(self.y_delta_true, depth=y_delta_buckets)
-
         with tf.variable_scope("deep_car", reuse=reuse):
+            # inputs
+            self.image = tf.placeholder(tf.float32, shape=input_shape, name='image')
+            self.steering_abs = tf.placeholder(tf.float32, shape=[None, 1], name='steering_abs')
+            self.y_delta_buckets = y_delta_buckets
+            # training flag for batch norm
+            self.training = tf.placeholder_with_default(False, shape=[], name='training')
+            # ground truth
+            self.y_distance_true = tf.placeholder(
+                    tf.float32, shape=[None, 1], name='y_distance_true')
+            self.y_delta_true = tf.placeholder(tf.int32, shape=[None, 1], name='y_delta_true')
+            self.y_delta_true_hot = tf.one_hot(self.y_delta_true, depth=y_delta_buckets)
+
             self.setup_distance_prob()
             self.setup_steering()
             self.setup_optimizer()
 
     def setup_distance_prob(self):
-        f = 16
-        k = 3
+        f = 48
+        k = 5
+        # TODO: fix batch normalization
 
         # data images are 48x64
         l = tf.layers.conv2d(self.image, f, 5, padding='same')
-        l = tf.layers.batch_normalization(l)
+        l = tf.layers.batch_normalization(l, training=self.training)
         l = tf.nn.relu(l)
         l = tf.layers.max_pooling2d(l, 2, 2)
 
         # 24x32 after pooling
         l = tf.layers.conv2d(l, 2*f, k, padding='same')
-        l = tf.layers.batch_normalization(l)
+        l = tf.layers.batch_normalization(l, training=self.training)
         l = tf.nn.relu(l)
         l = tf.layers.max_pooling2d(l, 2, 2)
 
         print(l.get_shape())
         # 12x16
         l = tf.layers.conv2d(l, 4*f, k, padding='same')
-        l = tf.layers.batch_normalization(l)
+        l = tf.layers.batch_normalization(l, training=self.training)
         l = tf.nn.relu(l)
         l = tf.layers.max_pooling2d(l, (2, 2), 2)
 
         l = tf.layers.conv2d(l, 4*f, k, padding='same')
-        l = tf.layers.batch_normalization(l)
+        l = tf.layers.batch_normalization(l, training=self.training)
         l = tf.nn.relu(l)
         l = tf.layers.max_pooling2d(l, (2, 2), 2)
 
         print(l.get_shape())
         # 6x8
         l = tf.layers.conv2d(l, 8*f, k, padding='same')
-        l = tf.layers.batch_normalization(l)
+        l = tf.layers.batch_normalization(l, training=self.training)
         l = tf.nn.relu(l)
         l = tf.layers.average_pooling2d(l, (3, 4), 1)
         l = tf.contrib.layers.flatten(l)
         l = tf.concat([l, self.steering_abs], axis=-1)
         l = tf.layers.dense(l, 4*f)
-        l = tf.layers.batch_normalization(l)
+        l = tf.layers.batch_normalization(l, training=self.training)
         l = tf.nn.relu(l)
 
         print(l.get_shape())
@@ -149,14 +149,16 @@ class Model:
             name='y_delta_loss')
 
         opt = tf.train.AdamOptimizer(learning_rate=0.0003)
-        self.opt_op = opt.minimize(
-            self.y_delta_loss + self.y_distance_loss, name='opt')
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        with tf.control_dependencies(update_ops):
+            self.opt_op = opt.minimize(
+                self.y_delta_loss + self.y_distance_loss, name='opt')
 
     def setup_steering(self):
         f = 16
         l = tf.concat([self.nn_features, self.y_distance_true], axis=-1)
         l = tf.layers.dense(l, 4*f)
-        l = tf.layers.batch_normalization(l)
+        l = tf.layers.batch_normalization(l, training=self.training)
         l = tf.nn.relu(l)
         self.y_steering_logits = tf.layers.dense(l, 2)
         self.y_steering_prob = tf.nn.softmax(self.y_steering_logits,

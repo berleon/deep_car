@@ -69,6 +69,31 @@ def augment_batch(batch):
     return batch_aug
 
 
+def crop_img(img, crop_size=(64, 48), resize=(80, 60)):
+    img = img.convert('L')
+    if img.size != resize:
+        img = img.resize(resize, resample=PIL.Image.BILINEAR)
+    img = img.crop(
+        map(
+            int,
+            [0.5 * (resize[0] - crop_size[0]),
+             0.5 * (resize[1] - crop_size[1]),
+             0.5 * (resize[0] + crop_size[0]),
+             0.5 * (resize[1] + crop_size[1])])
+    )
+    return np.asarray(img)
+
+
+def crop_batch(batch):
+    images = [PIL.Image.fromarray(x) for x in batch["image"]]
+    images = [crop_img(img) for img in images]
+    batch_aug = {'image': np.stack([np.array(img) for img in images])}
+    for k, v in batch.items():
+        if k != 'image':
+            batch_aug[k] = v
+    return batch_aug
+
+
 def labels_to_int(y, n_buckets=180):
     return (y * n_buckets).astype(np.int)
 
@@ -101,7 +126,7 @@ def get_steering_delta(batch):
 def batch_to_numpy(batch, y_delta_buckets=9):
     x = 2. * batch['image'] / 255. - 1
     y_abs = batch['steering_abs']
-    y_delta = get_steering_delta(batch)
+    y_delta = (batch)
     y_delta_disc = discretize(y_delta / np.pi * 180, n_buckets=y_delta_buckets, min=-45, max=45)
     return x[:, :, :, np.newaxis],  get_steering_hist(batch), y_delta_disc, y_abs
 

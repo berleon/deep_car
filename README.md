@@ -85,12 +85,11 @@ We use mean squared error as loss and train the network with the
 
 ## Scripts on the car
 
-All notebooks can be run remotely. There are two scripts that must run on the car:
+All notebooks can be run remotely. It is preferrable to scale the camera images on the car to save bandwidth. 
+Start the appropiate script on the car:
 
 * [`crop_img.py`](scripts/crop_img.py): This crops the image to (64, 40) and converts them to grayscale such that they can be used as input to the neural network. The topic name is `/deepcar/crop_img64x48/compressed`.
 *  [`resize_img80x60.py`](scripts/resize_img80x60.py): Crops the image to (80, 60) and leaves them in RGB color space. Run this script if you want to record data. The topic name is `/deepcar/resize_img80x60/compressed`.
-
-Copy them to the car with `scp` and execute the appropriate one.
 
 ## Run the network on the car
 
